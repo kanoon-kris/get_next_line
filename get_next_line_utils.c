@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/29 12:24:01 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/05 00:36:36 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/05 22:34:55 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,58 +22,6 @@ void	ft_lstdelone(t_list *lst, void (*del)(void*))
 	if (del)
 		(*del)(lst->content);
 	free(lst);
-}
-
-void	*ft_memcpy(void *dest, const void *src, size_t n)
-{
-	const unsigned char	*src_copy;
-	unsigned char		*dest_copy;
-
-	src_copy = src;
-	dest_copy = dest;
-	while (n--)
-		*dest_copy++ = *src_copy++;
-	return (dest);
-}
-
-void	ft_lstclear(t_list **lst, void (*del)(void*))
-{
-	t_list	*next_node;
-
-	while (*lst)
-	{
-		next_node = (*lst)->next;
-		(*del)((*lst)->content);
-		free(*lst);
-		*lst = next_node;
-	}
-	*lst = NULL;
-}
-
-char	*ft_strchr(const char *s, int c)
-{
-	unsigned char	c_copy;
-	size_t			idx;
-
-	c_copy = c;
-	idx = 0;
-	while (1)
-	{
-		if ((unsigned char)s[idx] == c_copy)
-			return ((char *)(s + idx));
-		if (s[idx] == '\0')
-			return (NULL);
-		++idx;
-	}
-}
-
-void	ft_lstiter(t_list *lst, void (*f)(void *))
-{
-	while (lst)
-	{
-		(*f)(lst->content);
-		lst = lst->next;
-	}
 }
 
 size_t	ft_strlen(const char *s)
@@ -134,14 +82,4 @@ t_list	*ft_lstnew(void *content)
 	new_node->content = content;
 	new_node->next = NULL;
 	return (new_node);
-}
-
-void	print_lst(void *ptr)
-{
-	char	*content;
-
-	content = (char *)(ptr);
-	if (!content)
-		printf("No node to be printed\n");
-	printf("%s", content);
 }

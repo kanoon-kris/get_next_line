@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/04 21:15:30 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/05 21:34:36 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/05 22:39:43 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,35 @@
 # define BUFFER_SIZE 1
 #endif
 #define DELIMITER '\n'
+
+void	*ft_memcpy(void *dest, const void *src, size_t n)
+{
+	const unsigned char	*src_copy;
+	unsigned char		*dest_copy;
+
+	src_copy = src;
+	dest_copy = dest;
+	while (n--)
+		*dest_copy++ = *src_copy++;
+	return (dest);
+}
+
+char	*ft_strchr(const char *s, int c)
+{
+	unsigned char	c_copy;
+	size_t			idx;
+
+	c_copy = c;
+	idx = 0;
+	while (1)
+	{
+		if ((unsigned char)s[idx] == c_copy)
+			return ((char *)(s + idx));
+		if (s[idx] == '\0')
+			return (NULL);
+		++idx;
+	}
+}
 
 char	*get_next_line(int fd)
 {
