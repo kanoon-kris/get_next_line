@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/04 21:15:30 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/05 21:15:19 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/05 21:34:36 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,34 +38,37 @@ char	*get_next_line(int fd)
 	res = NULL;
 	while (res == NULL)
 	{
-		byte_read = read(fd, buf, BUFFER_SIZE);
-		if (byte_read < 0)
-			return (free(buf), NULL);
-		else if (byte_read == 0)
+		if (stash != NULL && ft_strchr(stash->content, DELIMITER) != NULL)
 		{
-			if (stash == NULL)
-				return (free(buf), NULL);
 			size_t count = 0;
 			node = stash;
-			while (node != NULL)
+			while (node->next != NULL)
 			{
 				count += ft_strlen(node->content);
 				node = node->next;
 			}
+			count += (((char *)ft_strchr(node->content, DELIMITER)) -
+				(char *)(node->content) + 1);
 			res = malloc(sizeof(char) * (count + 1));
 			node = stash;
 			char	*ptr = res;
 			size_t	index = 0;
+			size_t	offset = 0;
 			while (node->next != NULL)
 			{
-				ft_memcpy(&ptr[index * BUFFER_SIZE],
-					node->content, BUFFER_SIZE);
+				ft_memcpy(&ptr[offset],
+					node->content, ft_strlen(node->content));
+				offset += ft_strlen(node->content);
 				node = node->next;
 				++index;
 			}
-			ft_memcpy(&ptr[index * BUFFER_SIZE], node->content,
-				(ft_strlen(node->content)));	// Fix last node always null
+			ft_memcpy(&ptr[offset], node->content,
+				(((char *)(ft_strchr(node->content, DELIMITER))) -
+				(char *)(node->content) + 1
+				));
 			*(res + count) = '\0';
+			char	*tail = ft_strdup(ft_strchr(node->content,
+				DELIMITER) + 1);
 			t_list	*tmp;
 			++index;
 			while (index != 0)
@@ -75,13 +78,20 @@ char	*get_next_line(int fd)
 				stash = tmp;
 				--index;
 			}
+			if (tail && *tail)
+				ft_lstadd_back(&stash, ft_lstnew(tail));
+			else
+				free(tail);
 		}
 		else
 		{
-			buf[byte_read] = '\0';
-			ft_lstadd_back(&stash, ft_lstnew(ft_strdup(buf)));
-			if (ft_strchr(buf, DELIMITER) != NULL)
+			byte_read = read(fd, buf, BUFFER_SIZE);
+			if (byte_read < 0)
+				return (free(buf), NULL);
+			else if (byte_read == 0)
 			{
+				if (stash == NULL)
+					return (free(buf), NULL);
 				size_t count = 0;
 				node = stash;
 				while (node != NULL)
@@ -92,21 +102,19 @@ char	*get_next_line(int fd)
 				res = malloc(sizeof(char) * (count + 1));
 				node = stash;
 				char	*ptr = res;
+				size_t	index = 0;
 				size_t	offset = 0;
 				while (node->next != NULL)
 				{
 					ft_memcpy(&ptr[offset],
-						node->content, ft_strlen(node->content);
+						node->content, ft_strlen(node->content));
 					offset += ft_strlen(node->content);
 					node = node->next;
+					++index;
 				}
 				ft_memcpy(&ptr[offset], node->content,
-					(((char *)(ft_strchr(node->content, DELIMITER))) -
-					(char *)(node->content) + 1
-					));
+					(ft_strlen(node->content)));	// Fix last node always null
 				*(res + count) = '\0';
-				char	*tail = ft_strdup(ft_strchr(node->content,
-					DELIMITER) + 1);
 				t_list	*tmp;
 				++index;
 				while (index != 0)
@@ -115,6 +123,56 @@ char	*get_next_line(int fd)
 					ft_lstdelone(stash, free);
 					stash = tmp;
 					--index;
+				}
+			}
+			else
+			{
+				buf[byte_read] = '\0';
+				ft_lstadd_back(&stash, ft_lstnew(ft_strdup(buf)));
+				if (ft_strchr(buf, DELIMITER) != NULL)
+				{
+					size_t count = 0;
+					node = stash;
+					while (node->next != NULL)
+					{
+						count += ft_strlen(node->content);
+						node = node->next;
+					}
+					count += (((char *)ft_strchr(node->content, DELIMITER)) -
+						(char *)(node->content) + 1);
+					res = malloc(sizeof(char) * (count + 1));
+					node = stash;
+					char	*ptr = res;
+					size_t	index = 0;
+					size_t	offset = 0;
+					while (node->next != NULL)
+					{
+						ft_memcpy(&ptr[offset],
+							node->content, ft_strlen(node->content));
+						offset += ft_strlen(node->content);
+						node = node->next;
+						++index;
+					}
+					ft_memcpy(&ptr[offset], node->content,
+						(((char *)(ft_strchr(node->content, DELIMITER))) -
+						(char *)(node->content) + 1
+						));
+					*(res + count) = '\0';
+					char	*tail = ft_strdup(ft_strchr(node->content,
+						DELIMITER) + 1);
+					t_list	*tmp;
+					++index;
+					while (index != 0)
+					{
+						tmp = stash->next;
+						ft_lstdelone(stash, free);
+						stash = tmp;
+						--index;
+					}
+					if (tail && *tail)
+						ft_lstadd_back(&stash, ft_lstnew(tail));
+					else
+						free(tail);
 				}
 			}
 		}
