@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/10/04 21:15:30 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/05 22:39:43 by kboonkos         ###   ########.fr       */
+/*   Created: 2026/10/06 17:08:16 by kboonkos          #+#    #+#             */
+/*   Updated: 2026/10/06 21:39:47 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,69 +49,81 @@ char	*ft_strchr(const char *s, int c)
 	}
 }
 
+void	clear_preceding_lst(t_list *stash, size_t index)
+{
+	t_list	*tmp;
+
+	++index;
+	while (index != 0)
+	{
+		tmp = stash->next;
+		ft_lstdelone(stash, free);
+		stash = tmp;
+		--index;
+	}
+}
+
+void	extract_line(t_list *stash, char *res,
+unsigned int is_last_node_entirely_processed)
+{
+	t_list	*node;
+	size_t	count = 0;
+	node = stash;
+	while (node->next != NULL)
+	{
+		count += ft_strlen(node->content);
+		node = node->next;
+	}
+	count += (((char *)ft_strchr(node->content, DELIMITER)) -
+		(char *)(node->content) + 1);
+	res = malloc(sizeof(char) * (count + 1));
+	node = stash;
+	char	*ptr = res;
+	size_t	index = 0;
+	size_t	offset = 0;
+	while (((!is_last_node_entirely_processed && (node->next != NULL)) ||
+		((is_last_node_entirely_processed && (node != NULL)))))
+	{
+		ft_memcpy(&ptr[offset], node->content, ft_strlen(node->content));
+		offset += ft_strlen(node->content);
+		node = node->next;
+		++index;
+	}
+	if (!is_last_node_entirely_processed)
+		ft_memcpy(&ptr[offset], node->content, (((char *)(ft_strchr(node->content,
+		DELIMITER))) - (char *)(node->content) + 1));
+	else
+		ft_memcpy(&ptr[offset], node->content, (ft_strlen(node->content)));
+	*(res + count) = '\0';
+	char	*tail = ft_strdup(ft_strchr(node->content, DELIMITER) + 1);
+	clear_preceding_lst(stash, index);
+	if (is_last_node_entirely_processed)
+	{
+		if (tail && *tail)
+			ft_lstadd_back(&stash, ft_lstnew(tail));
+		else
+			free(tail);
+	}
+}
+
 char	*get_next_line(int fd)
 {
-	ssize_t				byte_read;
-	static t_list		*stash;
-	t_list				*node;
-	char				*buf;
-	char				*res;
+	char			*buf;
+	int				byte_read;
+	char			*res;
+	static t_list	*stash;
 
 	if ((fd < 0) || (BUFFER_SIZE <= 0))
 		return (NULL);
-	buf = malloc(BUFFER_SIZE + 1);
+	buf = malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!buf)
 		return (NULL);
 	byte_read = 0;
-	node = stash;
 	res = NULL;
 	while (res == NULL)
 	{
 		if (stash != NULL && ft_strchr(stash->content, DELIMITER) != NULL)
-		{
-			size_t count = 0;
-			node = stash;
-			while (node->next != NULL)
-			{
-				count += ft_strlen(node->content);
-				node = node->next;
-			}
-			count += (((char *)ft_strchr(node->content, DELIMITER)) -
-				(char *)(node->content) + 1);
-			res = malloc(sizeof(char) * (count + 1));
-			node = stash;
-			char	*ptr = res;
-			size_t	index = 0;
-			size_t	offset = 0;
-			while (node->next != NULL)
-			{
-				ft_memcpy(&ptr[offset],
-					node->content, ft_strlen(node->content));
-				offset += ft_strlen(node->content);
-				node = node->next;
-				++index;
-			}
-			ft_memcpy(&ptr[offset], node->content,
-				(((char *)(ft_strchr(node->content, DELIMITER))) -
-				(char *)(node->content) + 1
-				));
-			*(res + count) = '\0';
-			char	*tail = ft_strdup(ft_strchr(node->content,
-				DELIMITER) + 1);
-			t_list	*tmp;
-			++index;
-			while (index != 0)
-			{
-				tmp = stash->next;
-				ft_lstdelone(stash, free);
-				stash = tmp;
-				--index;
-			}
-			if (tail && *tail)
-				ft_lstadd_back(&stash, ft_lstnew(tail));
-			else
-				free(tail);
-		}
+			extract_line(stash, res, 0);
 		else
 		{
 			byte_read = read(fd, buf, BUFFER_SIZE);
@@ -121,91 +133,17 @@ char	*get_next_line(int fd)
 			{
 				if (stash == NULL)
 					return (free(buf), NULL);
-				size_t count = 0;
-				node = stash;
-				while (node != NULL)
-				{
-					count += ft_strlen(node->content);
-					node = node->next;
-				}
-				res = malloc(sizeof(char) * (count + 1));
-				node = stash;
-				char	*ptr = res;
-				size_t	index = 0;
-				size_t	offset = 0;
-				while (node->next != NULL)
-				{
-					ft_memcpy(&ptr[offset],
-						node->content, ft_strlen(node->content));
-					offset += ft_strlen(node->content);
-					node = node->next;
-					++index;
-				}
-				ft_memcpy(&ptr[offset], node->content,
-					(ft_strlen(node->content)));	// Fix last node always null
-				*(res + count) = '\0';
-				t_list	*tmp;
-				++index;
-				while (index != 0)
-				{
-					tmp = stash->next;
-					ft_lstdelone(stash, free);
-					stash = tmp;
-					--index;
-				}
+				extract_line(stash, res, 1);
 			}
 			else
 			{
 				buf[byte_read] = '\0';
 				ft_lstadd_back(&stash, ft_lstnew(ft_strdup(buf)));
 				if (ft_strchr(buf, DELIMITER) != NULL)
-				{
-					size_t count = 0;
-					node = stash;
-					while (node->next != NULL)
-					{
-						count += ft_strlen(node->content);
-						node = node->next;
-					}
-					count += (((char *)ft_strchr(node->content, DELIMITER)) -
-						(char *)(node->content) + 1);
-					res = malloc(sizeof(char) * (count + 1));
-					node = stash;
-					char	*ptr = res;
-					size_t	index = 0;
-					size_t	offset = 0;
-					while (node->next != NULL)
-					{
-						ft_memcpy(&ptr[offset],
-							node->content, ft_strlen(node->content));
-						offset += ft_strlen(node->content);
-						node = node->next;
-						++index;
-					}
-					ft_memcpy(&ptr[offset], node->content,
-						(((char *)(ft_strchr(node->content, DELIMITER))) -
-						(char *)(node->content) + 1
-						));
-					*(res + count) = '\0';
-					char	*tail = ft_strdup(ft_strchr(node->content,
-						DELIMITER) + 1);
-					t_list	*tmp;
-					++index;
-					while (index != 0)
-					{
-						tmp = stash->next;
-						ft_lstdelone(stash, free);
-						stash = tmp;
-						--index;
-					}
-					if (tail && *tail)
-						ft_lstadd_back(&stash, ft_lstnew(tail));
-					else
-						free(tail);
-				}
+					extract_line(stash, res, 0);
 			}
 		}
-	}
+	}	
 	free(buf);
 	return (res);
 }
