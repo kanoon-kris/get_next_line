@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/29 12:24:01 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/07 20:33:08 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/08 03:18:25 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,19 +30,26 @@ size_t	ft_strlen(const char *s)
 	return (count);
 }
 
-void	ft_lstadd_back(t_list **lst, t_list *new)
+int	lst_append(t_list **lst, char *content)
 {
+	t_list	*new_node;
 	t_list	*last_node;
 
+	new_node = malloc(sizeof(t_list));
+	if ((!new_node) || (!content))
+		return (free(new_node), free(content), 0);
+	new_node->content = content;
+	new_node->next = NULL;
 	if (*lst == NULL)
 	{
-		*lst = new;
-		return ;
+		*lst = new_node;
+		return (1);
 	}
 	last_node = *lst;
 	while (last_node->next != NULL)
 		last_node = last_node->next;
-	last_node->next = new;
+	last_node->next = new_node;
+	return (1);
 }
 
 char	*ft_strdup(const char *s)
@@ -63,26 +70,32 @@ char	*ft_strdup(const char *s)
 	return (str_pt);
 }
 
-t_list	*ft_lstnew(void *content)
+void	lst_clear(t_list **lst)
 {
-	t_list	*new_node;
+	t_list	*next_node;
 
-	new_node = malloc(sizeof(t_list));
-	if (!new_node)
-		return (NULL);
-	new_node->content = content;
-	new_node->next = NULL;
-	return (new_node);
+	while (*lst)
+	{
+		next_node = (*lst)->next;
+		free((*lst)->content);
+		free(*lst);
+		*lst = next_node;
+	}
 }
 
-void	*ft_memcpy(void *dest, const void *src, size_t n)
+char	*ft_strchr(const char *s, int c)
 {
-	const unsigned char	*src_copy;
-	unsigned char		*dest_copy;
+	unsigned char	c_copy;
+	size_t			idx;
 
-	src_copy = src;
-	dest_copy = dest;
-	while (n--)
-		*dest_copy++ = *src_copy++;
-	return (dest);
+	c_copy = c;
+	idx = 0;
+	while (1)
+	{
+		if ((unsigned char)s[idx] == c_copy)
+			return ((char *)(s + idx));
+		if (s[idx] == '\0')
+			return (NULL);
+		++idx;
+	}
 }

@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/06 17:08:16 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/07 20:24:39 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/08 03:56:08 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,116 +19,104 @@
 #endif
 #define DELIMITER '\n'
 
-char	*ft_strchr(const char *s, int c)
+static size_t	line_len(const char *s)
 {
-	unsigned char	c_copy;
-	size_t			idx;
+	char	*nl;
 
-	c_copy = c;
-	idx = 0;
+	nl = ft_strchr(s, '\n');
+	if (nl)
+		return (nl - s + 1);
+	return (ft_strlen(s));
+}
+
+int	fill_stash(int fd, t_list **stash)
+{
+	char	*buf;
+	int		byte_read;
+
+	if (*stash && ft_strchr((*stash)->content, '\n'))
+		return (1);
+	buf = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	if (!buf)
+		return (0);
 	while (1)
 	{
-		if ((unsigned char)s[idx] == c_copy)
-			return ((char *)(s + idx));
-		if (s[idx] == '\0')
-			return (NULL);
-		++idx;
+		byte_read = read(fd, buf, BUFFER_SIZE);
+		if (byte_read < 0)
+			return (free(buf), 0);
+		else if (byte_read == 0)
+			break ;
+		buf[byte_read] = '\0';
+		if (lst_append(stash, ft_strdup(buf)) == 0)
+			return (free(buf), lst_clear(stash), 0);
+		if (ft_strchr(buf, '\n') != 0)
+			break ;
 	}
+	free(buf);
+	return (1);
 }
 
-void	ft_lstclear(t_list **lst, void (*del)(void*))
+size_t	stash_len(t_list *stash)
 {
-	t_list	*next_node;
+	size_t	len;
 
-	while (*lst)
+	len = 0;
+	while (stash != NULL)
 	{
-		next_node = (*lst)->next;
-		(*del)((*lst)->content);
-		free(*lst);
-		*lst = next_node;
+		len += line_len(stash->content);
+		stash = stash->next;
 	}
+	return (len);
 }
 
-void	extract_line(t_list **stash, char **res)
+char	*build_line(t_list *stash)
 {
-	t_list	*node;
-	size_t	count;
-	char	*tail;
+	size_t	i;
+	size_t	j;
+	size_t	k;
+	char	*line;
 
-	tail = NULL;
-	count = 0;
-	node = *stash;
-	while (node->next != NULL)
+	line = malloc(sizeof(char *) * (stash_len(stash) + 1));
+	if (!line)
+		return (NULL);
+	i = 0;
+	while (stash != NULL)
 	{
-		count += ft_strlen(node->content);
-		node = node->next;
+		j = 0;
+		k = line_len(stash->content);
+		while (j < k)
+			line[i++] = ((char *)(stash->content))[j++];
+		stash = stash->next;
 	}
-	if (ft_strchr(node->content, DELIMITER) != NULL)
-		count += (((char *)ft_strchr(node->content, DELIMITER)) -
-			(char *)(node->content) + 1);
-	else
-		count += ft_strlen(node->content);
-	*res = malloc(sizeof(char) * (count + 1));
-	node = *stash;
-	char	*ptr = *res;
-	size_t	offset = 0;
-	while (node->next != NULL)
-	{
-		ft_memcpy(&ptr[offset], node->content, ft_strlen(node->content));
-		offset += ft_strlen(node->content);
-		node = node->next;
-	}
-	if (ft_strchr(node->content, DELIMITER) != NULL)
-		ft_memcpy(&ptr[offset], node->content, (((char *)(ft_strchr(node->content,
-			DELIMITER))) - (char *)(node->content) + 1));
-	else
-		ft_memcpy(&ptr[offset], node->content, (ft_strlen(node->content)));
-	*(*res + count) = '\0';
-	if (ft_strchr(node->content, DELIMITER))
-		tail = ft_strdup(ft_strchr(node->content, DELIMITER) + 1);
-	ft_lstclear(stash, free);
-	if (tail && *tail)
-		ft_lstadd_back(stash, ft_lstnew(tail));
-	else
-		free(tail);
+	line[i] = '\0';
+	return (line);
 }
 
 char	*get_next_line(int fd)
 {
-	char			*buf;
-	int				byte_read;
-	char			*res;
 	static t_list	*stash;
+	char			*line;
+	char			*tail;
+	t_list			*node;
 
-	if ((fd < 0) || (BUFFER_SIZE <= 0))
+	if ((fd < 0) || (BUFFER_SIZE < 1))
 		return (NULL);
-	buf = malloc(sizeof(char) * (BUFFER_SIZE + 1));
-	if (!buf)
-		return (NULL);
-	res = NULL;
-	while (res == NULL)
-	{
-		if (stash != NULL && ft_strchr(stash->content, DELIMITER) != NULL)
-			extract_line(&stash, &res);
-		else
-		{
-			byte_read = read(fd, buf, BUFFER_SIZE);
-			if (byte_read < 0)
-				return (free(buf), ft_lstclear(&stash, free), NULL);
-			else if (byte_read == 0)
-			{
-				if (stash == NULL)
-					return (free(buf), NULL);
-				extract_line(&stash, &res);
-			}
-			else
-			{
-				buf[byte_read] = '\0';
-				ft_lstadd_back(&stash, ft_lstnew(ft_strdup(buf)));
-				if (ft_strchr(buf, DELIMITER) != NULL)
-					extract_line(&stash, &res);
-			}
-		}
-	}	
-	return (free(buf), res);
+	if ((fill_stash(fd, &stash) == 0) || (stash == NULL))
+		return (lst_clear(&stash), NULL);
+	line = build_line(stash);
+	node = stash;
+	while (node->next != NULL)
+		node = node->next;
+	tail = ft_strdup((char *)(node->content) + line_len(node->content));
+	lst_clear(&stash);
+	if (!line || !tail || !*tail)
+		return (free(tail), line);
+	else if (lst_append(&stash, tail) == 0)
+		return (free(line), NULL);
+	else
+		return (line);
 }
+// !*tail checks, at EOF, when the newline is the last byte of a node,
+// tail is "", a valid empty string so it gets appended as a node.
+// On the next call fill_stash reads 0 bytes, but the stash isn't empty.
+// build_line() then returns "" instead of NULL.
