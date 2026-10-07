@@ -6,7 +6,7 @@
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/29 12:24:01 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/05 22:34:55 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/07 17:26:10 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,15 +14,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "get_next_line.h"
-
-void	ft_lstdelone(t_list *lst, void (*del)(void*))
-{
-	if (!lst)
-		return ;
-	if (del)
-		(*del)(lst->content);
-	free(lst);
-}
 
 size_t	ft_strlen(const char *s)
 {
@@ -82,4 +73,16 @@ t_list	*ft_lstnew(void *content)
 	new_node->content = content;
 	new_node->next = NULL;
 	return (new_node);
+}
+
+void	*ft_memcpy(void *dest, const void *src, size_t n)
+{
+	const unsigned char	*src_copy;
+	unsigned char		*dest_copy;
+
+	src_copy = src;
+	dest_copy = dest;
+	while (n--)
+		*dest_copy++ = *src_copy++;
+	return (dest);
 }
