@@ -1,16 +1,16 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*   get_next_line_bonus.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: kboonkos <kboonkos@student.42bangkok.      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/10/06 17:08:16 by kboonkos          #+#    #+#             */
-/*   Updated: 2026/10/09 15:18:35 by kboonkos         ###   ########.fr       */
+/*   Updated: 2026/10/09 15:14:19 by kboonkos         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "get_next_line_bonus.h"
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -113,7 +113,8 @@ char	*get_next_line(int fd)
 		return (free(tail), line);
 	else if (lst_append(&stash[fd], tail) == 0)
 		return (free(line), NULL);
-	return (line);
+	else
+		return (line);
 }
 // !*tail checks, at EOF, when the newline is the last byte of a node,
 // tail is "", a valid empty string so it gets appended as a node.
